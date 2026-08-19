@@ -8,9 +8,17 @@ dist
 dist-ssr
 *.local
 
+# Supabase CLI temp
+.temp
+supabase/.temp
+
 # Environment Variables
 .env
 .env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.env
 shramsetu/.env
 shramsetu/.env.*
