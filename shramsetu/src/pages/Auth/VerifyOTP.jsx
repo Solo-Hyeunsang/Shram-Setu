@@ -1,4 +1,4 @@
-// Shram Setu — OTP Verification Page (Direct ClerkJS Client with Robust Verification)
+// Shram Setu — OTP Verification Page (Email-Only Verification)
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowRight, RotateCcw, ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
@@ -7,9 +7,8 @@ import { Button } from '../../components/ui/Button';
 
 export function VerifyOTP() {
   const [searchParams] = useSearchParams();
-  const phone = searchParams.get('phone') || '';
-  const email = searchParams.get('email') || '';
-  const mode = searchParams.get('mode') || 'signin';
+  const email = searchParams.get('email') || searchParams.get('phone') || '';
+  const mode = searchParams.get('mode') || 'signin_email';
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -56,7 +55,7 @@ export function VerifyOTP() {
     setError(null);
 
     try {
-      if (mode === 'signup_email') {
+      if (mode.startsWith('signup')) {
         let completeSignUp;
         try {
           completeSignUp = await clerk.client.signUp.attemptEmailAddressVerification({
@@ -66,7 +65,7 @@ export function VerifyOTP() {
           const errCode = verifyErr.errors?.[0]?.code;
           const errMsg = verifyErr.errors?.[0]?.message || '';
           if (errCode === 'verification_already_verified' || errMsg.toLowerCase().includes('already been verified')) {
-            console.log('Verification already verified, proceeding...');
+            console.log('Verification already completed, proceeding to session activation...');
             completeSignUp = clerk.client.signUp;
           } else {
             throw verifyErr;
@@ -80,48 +79,13 @@ export function VerifyOTP() {
         }
         navigate('/onboarding');
         return;
-      } else if (mode === 'signup') {
-        let completeSignUp;
-        try {
-          completeSignUp = await clerk.client.signUp.attemptPhoneNumberVerification({
-            code: token,
-          });
-        } catch (verifyErr) {
-          const errCode = verifyErr.errors?.[0]?.code;
-          const errMsg = verifyErr.errors?.[0]?.message || '';
-          if (errCode === 'verification_already_verified' || errMsg.toLowerCase().includes('already been verified')) {
-            completeSignUp = clerk.client.signUp;
-          } else {
-            throw verifyErr;
-          }
-        }
-
-        const sessionId = completeSignUp?.createdSessionId || clerk.client.signUp?.createdSessionId;
-        if (sessionId) {
-          await clerk.setActive({ session: sessionId });
-        }
-        navigate('/onboarding');
-        return;
-      } else if (mode === 'signin_email') {
+      } else {
         const result = await clerk.client.signIn.attemptFirstFactor({
           strategy: 'email_code',
           code: token,
         });
 
         console.log('SignIn email verify outcome:', result);
-        const sessionId = result?.createdSessionId || clerk.client.signIn?.createdSessionId;
-        if (sessionId) {
-          await clerk.setActive({ session: sessionId });
-        }
-        navigate('/onboarding');
-        return;
-      } else if (mode === 'signin') {
-        const result = await clerk.client.signIn.attemptFirstFactor({
-          strategy: 'phone_code',
-          code: token,
-        });
-
-        console.log('SignIn phone verify outcome:', result);
         const sessionId = result?.createdSessionId || clerk.client.signIn?.createdSessionId;
         if (sessionId) {
           await clerk.setActive({ session: sessionId });
@@ -146,19 +110,12 @@ export function VerifyOTP() {
     setResendTimer(45);
     setError(null);
     try {
-      if (mode === 'signup_email') {
+      if (mode.startsWith('signup')) {
         await clerk.client.signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-      } else if (mode === 'signup') {
-        await clerk.client.signUp.preparePhoneNumberVerification({ strategy: 'phone_code' });
-      } else if (mode === 'signin_email') {
+      } else {
         const factor = clerk.client.signIn.supportedFirstFactors?.find((f) => f.strategy === 'email_code');
         if (factor) {
           await clerk.client.signIn.prepareFirstFactor({ strategy: 'email_code', emailAddressId: factor.emailAddressId });
-        }
-      } else if (mode === 'signin') {
-        const factor = clerk.client.signIn.supportedFirstFactors?.find((f) => f.strategy === 'phone_code');
-        if (factor) {
-          await clerk.client.signIn.prepareFirstFactor({ strategy: 'phone_code', phoneNumberId: factor.phoneNumberId });
         }
       }
     } catch (err) {
@@ -166,8 +123,6 @@ export function VerifyOTP() {
       setError(err.errors?.[0]?.message || 'Could not resend code. Please wait a moment.');
     }
   };
-
-  const identifier = email || phone;
 
   return (
     <div
@@ -187,7 +142,7 @@ export function VerifyOTP() {
           maxWidth: '440px',
           background: '#FFFFFF',
           borderRadius: '24px',
-          padding: '40px 36px',
+          padding: '44px 36px',
           boxShadow: 'var(--shadow-md)',
           border: '1px solid var(--color-border)',
         }}
@@ -206,7 +161,7 @@ export function VerifyOTP() {
           }}
         >
           <ArrowLeft size={16} />
-          {email ? 'Change Email Address' : 'Change Phone Number'}
+          Change Email Address
         </Link>
 
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
@@ -214,8 +169,8 @@ export function VerifyOTP() {
             src="/logo.png"
             alt="Shram Setu Logo"
             style={{
-              width: '42px',
-              height: '42px',
+              width: '44px',
+              height: '44px',
               objectFit: 'contain',
               borderRadius: 'var(--radius-md)',
               marginBottom: '16px',
@@ -242,7 +197,7 @@ export function VerifyOTP() {
           >
             We've sent a 6-digit verification code to
             <br />
-            <strong style={{ color: 'var(--color-text-primary)' }}>{identifier}</strong>
+            <strong style={{ color: 'var(--color-text-primary)' }}>{email}</strong>
           </p>
         </div>
 
