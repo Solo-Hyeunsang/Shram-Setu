@@ -1,15 +1,19 @@
-// Shram Setu — Header Component (Clean White UI)
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Bell, User, LogOut } from 'lucide-react';
+import { Show, UserButton, useUser, useClerk } from '@clerk/react';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from './ui/Button';
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { session, profile, signOut } = useAuth();
+  const { user, isSignedIn } = useUser();
+  const { signOut: clerkSignOut } = useClerk();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isUserAuthenticated = isSignedIn || !!session;
 
   useEffect(() => {
     setMenuOpen(false);
@@ -59,24 +63,16 @@ export function Header() {
               textDecoration: 'none',
             }}
           >
-            <div
+            <img
+              src="/logo.png"
+              alt="Shram Setu Logo"
               style={{
                 width: '38px',
                 height: '38px',
+                objectFit: 'contain',
                 borderRadius: 'var(--radius-md)',
-                background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#FFFFFF',
-                fontWeight: '700',
-                fontSize: '16px',
-                fontFamily: 'var(--font-display)',
-                boxShadow: '0 2px 8px rgba(50, 140, 189, 0.25)',
               }}
-            >
-              SS
-            </div>
+            />
             <div>
               <span
                 style={{
@@ -126,65 +122,115 @@ export function Header() {
 
           {/* Desktop User Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} className="desktop-nav">
-            {session ? (
-              <>
-                <button
-                  onClick={() => navigate('/notifications')}
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: 'var(--radius-full)',
-                    border: '1px solid var(--color-border)',
-                    background: '#FFFFFF',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all var(--transition-fast)',
-                  }}
-                  aria-label="Notifications"
-                >
-                  <Bell size={18} color="var(--color-text-secondary)" />
-                </button>
-                <button
-                  onClick={() => navigate(profile?.role === 'worker' ? '/worker/dashboard' : '/employer/dashboard')}
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: 'var(--radius-full)',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: '#FFFFFF',
-                    boxShadow: '0 2px 8px rgba(50, 140, 189, 0.25)',
-                  }}
-                  aria-label="Dashboard"
-                >
-                  <User size={18} />
-                </button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/login')}
-                  style={{ color: 'var(--color-text-secondary)', fontWeight: '600' }}
-                >
-                  Log In
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => navigate('/login')}
-                >
-                  Get Started
-                </Button>
-              </>
-            )}
+            <Show when="signed-in">
+              <button
+                onClick={() => navigate('/notifications')}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-full)',
+                  border: '1px solid var(--color-border)',
+                  background: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast)',
+                }}
+                aria-label="Notifications"
+              >
+                <Bell size={18} color="var(--color-text-secondary)" />
+              </button>
+              <button
+                onClick={() => navigate('/worker/dashboard')}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 'var(--radius-full)',
+                  border: '1px solid var(--color-primary-200)',
+                  background: 'var(--color-primary-50)',
+                  color: 'var(--color-primary-700)',
+                  fontWeight: '600',
+                  fontSize: '13.5px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <User size={15} />
+                Dashboard
+              </button>
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox: { width: '38px', height: '38px' },
+                  },
+                }}
+              />
+            </Show>
+
+            <Show when="signed-out">
+              {session ? (
+                <>
+                  <button
+                    onClick={() => navigate('/notifications')}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: 'var(--radius-full)',
+                      border: '1px solid var(--color-border)',
+                      background: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-fast)',
+                    }}
+                    aria-label="Notifications"
+                  >
+                    <Bell size={18} color="var(--color-text-secondary)" />
+                  </button>
+                  <button
+                    onClick={() => navigate(profile?.role === 'worker' ? '/worker/dashboard' : '/employer/dashboard')}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: 'var(--radius-full)',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: '#FFFFFF',
+                      boxShadow: '0 2px 8px rgba(13, 43, 82, 0.25)',
+                    }}
+                    aria-label="Dashboard"
+                  >
+                    <User size={18} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('/login')}
+                    style={{ color: 'var(--color-text-secondary)', fontWeight: '600' }}
+                  >
+                    Log In
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => navigate('/login')}
+                  >
+                    Get Started
+                  </Button>
+                </>
+              )}
+            </Show>
           </div>
 
           {/* Mobile Hamburger Button */}

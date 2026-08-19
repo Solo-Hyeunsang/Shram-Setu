@@ -83,10 +83,12 @@ export function FeaturedWorkers() {
               key={i}
               style={{
                 flexShrink: 0,
+                width: '320px',
                 scrollSnapAlign: 'start',
+                display: 'flex',
               }}
             >
-              <WorkerCard worker={worker} />
+              <WorkerCard worker={worker} onClick={() => navigate('/search/workers')} />
             </div>
           ))}
         </div>

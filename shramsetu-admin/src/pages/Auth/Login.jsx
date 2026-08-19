@@ -69,25 +69,17 @@ export function Login() {
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div
+          <img
+            src="/logo.png"
+            alt="Shram Setu Logo"
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: 'var(--radius-lg)',
-              background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              fontWeight: '800',
-              fontSize: '18px',
-              fontFamily: 'var(--font-display)',
+              width: '48px',
+              height: '48px',
+              objectFit: 'contain',
               margin: '0 auto 16px',
-              boxShadow: '0 4px 12px rgba(50, 140, 189, 0.3)',
+              display: 'block',
             }}
-          >
-            SS
-          </div>
+          />
 
           <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--color-text-primary)', marginBottom: '6px' }}>
             Operations & Verifier Portal

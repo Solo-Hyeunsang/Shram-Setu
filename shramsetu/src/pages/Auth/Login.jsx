@@ -1,33 +1,28 @@
-// Shram Setu — Login Page (Clean White Background)
+// Shram Setu — Login Page (Direct ClerkJS Client Integration)
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Phone, Mail, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import { signInWithPhone, signInWithEmail } from '../../api/authApi';
+import { Phone, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useClerk } from '@clerk/react';
 import { Button } from '../../components/ui/Button';
 
 export function Login() {
-  const [authMode, setAuthMode] = useState('phone');
+  const [authMode, setAuthMode] = useState('email');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const navigate = useNavigate();
 
-  const handlePhoneSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    if (!phone.trim()) {
-      setError('Please enter a valid phone number');
-      return;
+  const clerk = useClerk();
+
+  const ensureClerk = async (timeoutMs = 5000) => {
+    if (clerk?.loaded && clerk?.client) return true;
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (clerk?.loaded && clerk?.client) return true;
+      await new Promise((r) => setTimeout(r, 100));
     }
-
-    setLoading(true);
-    const formattedPhone = phone.startsWith('+') ? phone : `+977${phone.replace(/^0+/, '')}`;
-    const { error: authError } = await signInWithPhone(formattedPhone);
-    setLoading(false);
-
-    navigate(`/verify-otp?phone=${encodeURIComponent(formattedPhone)}`);
+    return clerk?.loaded && clerk?.client;
   };
 
   const handleEmailSubmit = async (e) => {
@@ -39,13 +34,143 @@ export function Login() {
     }
 
     setLoading(true);
-    const { error: authError } = await signInWithEmail(email);
-    setLoading(false);
+    const cleanEmail = email.trim().toLowerCase();
 
-    if (authError) {
-      setError(authError.message || 'Failed to send magic link. Please try again.');
-    } else {
-      setMagicLinkSent(true);
+    try {
+      const ready = await ensureClerk();
+      if (!ready || !clerk.client) {
+        throw new Error('Authentication service is still initializing. Please try again.');
+      }
+
+      console.log('Step 1: Attempting SignIn for:', cleanEmail);
+      let isExistingUser = false;
+
+      // 1. Try Sign In
+      try {
+        const signInRes = await clerk.client.signIn.create({
+          identifier: cleanEmail,
+        });
+        console.log('SignIn created:', signInRes);
+
+        const emailFactor = signInRes.supportedFirstFactors?.find(
+          (f) => f.strategy === 'email_code'
+        );
+
+        if (emailFactor) {
+          console.log('Preparing email code factor for existing account...');
+          await clerk.client.signIn.prepareFirstFactor({
+            strategy: 'email_code',
+            emailAddressId: emailFactor.emailAddressId,
+          });
+          isExistingUser = true;
+          setLoading(false);
+          navigate(`/verify-otp?email=${encodeURIComponent(cleanEmail)}&mode=signin_email`);
+          return;
+        }
+      } catch (signInErr) {
+        console.warn('Account not found in SignIn, proceeding to SignUp:', signInErr);
+      }
+
+      // 2. Try Sign Up for new account
+      if (!isExistingUser) {
+        console.log('Step 2: Creating SignUp for:', cleanEmail);
+        await clerk.client.signUp.create({
+          emailAddress: cleanEmail,
+        });
+
+        console.log('Dispatching email OTP verification...');
+        await clerk.client.signUp.prepareEmailAddressVerification({
+          strategy: 'email_code',
+        });
+
+        console.log('Verification email code dispatched successfully!');
+        setLoading(false);
+        navigate(`/verify-otp?email=${encodeURIComponent(cleanEmail)}&mode=signup_email`);
+        return;
+      }
+    } catch (err) {
+      console.error('Email Auth Error:', err);
+      const errMsg =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        err.message ||
+        'Failed to send verification code. Please check your email address.';
+      setError(errMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePhoneSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    if (!phone.trim()) {
+      setError('Please enter a valid phone number');
+      return;
+    }
+
+    setLoading(true);
+    const rawDigits = phone.replace(/\D/g, '');
+    const formattedPhone = phone.startsWith('+') ? phone : `+977${rawDigits.replace(/^0+/, '')}`;
+
+    try {
+      const ready = await ensureClerk();
+      if (!ready || !clerk.client) {
+        throw new Error('Authentication service is still initializing. Please try again.');
+      }
+
+      console.log('Step 1: Attempting Phone SignIn for:', formattedPhone);
+      let isExistingUser = false;
+
+      try {
+        const signInRes = await clerk.client.signIn.create({
+          identifier: formattedPhone,
+        });
+
+        const phoneFactor = signInRes.supportedFirstFactors?.find(
+          (f) => f.strategy === 'phone_code'
+        );
+
+        if (phoneFactor) {
+          console.log('Preparing phone code factor for existing account...');
+          await clerk.client.signIn.prepareFirstFactor({
+            strategy: 'phone_code',
+            phoneNumberId: phoneFactor.phoneNumberId,
+          });
+          isExistingUser = true;
+          setLoading(false);
+          navigate(`/verify-otp?phone=${encodeURIComponent(formattedPhone)}&mode=signin`);
+          return;
+        }
+      } catch (signInErr) {
+        console.warn('Phone SignIn check failed, proceeding to SignUp:', signInErr);
+      }
+
+      if (!isExistingUser) {
+        console.log('Step 2: Creating Phone SignUp for:', formattedPhone);
+        await clerk.client.signUp.create({
+          phoneNumber: formattedPhone,
+        });
+
+        console.log('Dispatching SMS verification code...');
+        await clerk.client.signUp.preparePhoneNumberVerification({
+          strategy: 'phone_code',
+        });
+
+        setLoading(false);
+        navigate(`/verify-otp?phone=${encodeURIComponent(formattedPhone)}&mode=signup`);
+        return;
+      }
+    } catch (err) {
+      console.error('Phone Auth Error:', err);
+      const errMsg =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        err.message ||
+        'Failed to send SMS code. Please check your phone number.';
+      setError(errMsg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,15 +183,17 @@ export function Login() {
         justifyContent: 'center',
         alignItems: 'center',
         padding: '24px',
-        background: 'var(--color-background-subtle)',
+        background: '#F8FAFC',
       }}
     >
+      <div id="clerk-captcha" />
+
       <div
         style={{
           width: '100%',
           maxWidth: '440px',
           background: '#FFFFFF',
-          borderRadius: 'var(--radius-2xl)',
+          borderRadius: '24px',
           padding: '40px 36px',
           boxShadow: 'var(--shadow-md)',
           border: '1px solid var(--color-border)',
@@ -84,24 +211,16 @@ export function Login() {
               marginBottom: '20px',
             }}
           >
-            <div
+            <img
+              src="/logo.png"
+              alt="Shram Setu Logo"
               style={{
-                width: '38px',
-                height: '38px',
+                width: '42px',
+                height: '42px',
+                objectFit: 'contain',
                 borderRadius: 'var(--radius-md)',
-                background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#FFFFFF',
-                fontWeight: '700',
-                fontSize: '16px',
-                fontFamily: 'var(--font-display)',
-                boxShadow: '0 2px 8px rgba(50, 140, 189, 0.25)',
               }}
-            >
-              SS
-            </div>
+            />
             <span
               style={{
                 fontFamily: 'var(--font-display)',
@@ -117,9 +236,10 @@ export function Login() {
           <h2
             style={{
               fontSize: '22px',
-              fontWeight: '700',
+              fontWeight: '800',
               color: 'var(--color-text-primary)',
               marginBottom: '6px',
+              fontFamily: 'var(--font-display)',
             }}
           >
             Welcome to Shram Setu
@@ -135,7 +255,7 @@ export function Login() {
           </p>
         </div>
 
-        {/* Tab switch */}
+        {/* Auth Mode Tabs */}
         <div
           style={{
             display: 'flex',
@@ -143,147 +263,144 @@ export function Login() {
             borderRadius: 'var(--radius-full)',
             padding: '4px',
             marginBottom: '24px',
-            border: '1px solid var(--color-border)',
+            border: '1px solid var(--color-border-light)',
           }}
         >
           <button
             type="button"
-            onClick={() => { setAuthMode('phone'); setError(null); setMagicLinkSent(false); }}
+            onClick={() => {
+              setAuthMode('email');
+              setError(null);
+            }}
             style={{
               flex: 1,
-              padding: '10px 14px',
-              fontSize: '13px',
-              fontWeight: '600',
-              border: 'none',
+              padding: '10px 16px',
               borderRadius: 'var(--radius-full)',
+              border: 'none',
+              background: authMode === 'email' ? '#FFFFFF' : 'transparent',
+              color: authMode === 'email' ? 'var(--color-primary-700)' : 'var(--color-text-secondary)',
+              fontWeight: '600',
+              fontSize: '13.5px',
               cursor: 'pointer',
+              boxShadow: authMode === 'email' ? 'var(--shadow-xs)' : 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
               transition: 'all var(--transition-fast)',
-              background: authMode === 'phone' ? '#FFFFFF' : 'transparent',
-              color: authMode === 'phone' ? 'var(--color-primary-600)' : 'var(--color-text-secondary)',
-              boxShadow: authMode === 'phone' ? 'var(--shadow-xs)' : 'none',
             }}
           >
-            <Phone size={14} />
-            Phone OTP
+            <Mail size={15} />
+            Email OTP
           </button>
+
           <button
             type="button"
-            onClick={() => { setAuthMode('email'); setError(null); }}
+            onClick={() => {
+              setAuthMode('phone');
+              setError(null);
+            }}
             style={{
               flex: 1,
-              padding: '10px 14px',
-              fontSize: '13px',
-              fontWeight: '600',
-              border: 'none',
+              padding: '10px 16px',
               borderRadius: 'var(--radius-full)',
+              border: 'none',
+              background: authMode === 'phone' ? '#FFFFFF' : 'transparent',
+              color: authMode === 'phone' ? 'var(--color-primary-700)' : 'var(--color-text-secondary)',
+              fontWeight: '600',
+              fontSize: '13.5px',
               cursor: 'pointer',
+              boxShadow: authMode === 'phone' ? 'var(--shadow-xs)' : 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
               transition: 'all var(--transition-fast)',
-              background: authMode === 'email' ? '#FFFFFF' : 'transparent',
-              color: authMode === 'email' ? 'var(--color-primary-600)' : 'var(--color-text-secondary)',
-              boxShadow: authMode === 'email' ? 'var(--shadow-xs)' : 'none',
             }}
           >
-            <Mail size={14} />
-            Email Link
+            <Phone size={15} />
+            Phone OTP
           </button>
         </div>
 
+        {/* Error Alert Box */}
         {error && (
           <div
             style={{
-              padding: '10px 14px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: '#FEE2E2',
-              color: 'var(--color-danger)',
+              background: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: 'var(--radius-lg)',
+              padding: '12px 14px',
+              marginBottom: '20px',
               fontSize: '13px',
-              marginBottom: '16px',
+              color: '#991B1B',
+              lineHeight: '1.4',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px',
             }}
           >
-            {error}
+            <AlertCircle size={16} color="#DC2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span>{error}</span>
           </div>
         )}
 
-        {authMode === 'phone' && (
-          <form onSubmit={handlePhoneSubmit}>
-            <div style={{ marginBottom: '20px' }}>
+        {/* Email Login Form */}
+        {authMode === 'email' && (
+          <form onSubmit={handleEmailSubmit}>
+            <div style={{ marginBottom: '24px' }}>
               <label
-                htmlFor="phone-input"
                 style={{
                   display: 'block',
-                  fontSize: '13px',
+                  fontSize: '13.5px',
                   fontWeight: '600',
                   color: 'var(--color-text-primary)',
                   marginBottom: '8px',
                 }}
               >
-                Mobile Phone Number
+                Email Address
               </label>
-              <div
+
+              <input
+                type="email"
+                placeholder="your.email@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  border: '1.5px solid var(--color-border)',
+                  width: '100%',
+                  padding: '12px 16px',
                   borderRadius: 'var(--radius-lg)',
-                  overflow: 'hidden',
+                  border: '1.5px solid var(--color-border)',
+                  outline: 'none',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '14.5px',
                   background: '#FFFFFF',
                 }}
-              >
-                <span
-                  style={{
-                    padding: '12px 14px',
-                    background: 'var(--color-background-subtle)',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: 'var(--color-text-secondary)',
-                    borderRight: '1px solid var(--color-border)',
-                  }}
-                >
-                  +977
-                </span>
-                <input
-                  id="phone-input"
-                  type="tel"
-                  placeholder="98XXXXXXXX"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '12px 14px',
-                    fontSize: '15px',
-                    border: 'none',
-                    outline: 'none',
-                    fontFamily: 'var(--font-body)',
-                    color: 'var(--color-text-primary)',
-                  }}
-                  autoFocus
-                />
-              </div>
-              <span
+                autoFocus
+              />
+
+              <p
                 style={{
-                  display: 'block',
                   fontSize: '12px',
                   color: 'var(--color-text-tertiary)',
-                  marginTop: '6px',
+                  marginTop: '8px',
                 }}
               >
-                We'll send a 6-digit verification code via SMS
-              </span>
+                We will email you a 6-digit verification code
+              </p>
             </div>
 
             <Button
               type="submit"
               variant="primary"
-              size="md"
               fullWidth
+              size="lg"
               loading={loading}
+              disabled={loading}
+              style={{
+                background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))',
+                boxShadow: '0 4px 14px rgba(13, 43, 82, 0.28)',
+              }}
             >
               Send Verification Code
               <ArrowRight size={16} />
@@ -291,99 +408,110 @@ export function Login() {
           </form>
         )}
 
-        {authMode === 'email' && (
-          <div>
-            {magicLinkSent ? (
-              <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                <CheckCircle2 size={44} color="var(--color-secondary)" style={{ margin: '0 auto 12px' }} />
-                <h3 style={{ fontSize: '17px', fontWeight: '700', marginBottom: '8px' }}>Magic Link Sent</h3>
-                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: '1.5' }}>
-                  We've sent a login link to <strong>{email}</strong>. Check your inbox to sign in instantly.
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setMagicLinkSent(false)}
-                  style={{ marginTop: '16px' }}
-                >
-                  Try Another Email
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={handleEmailSubmit}>
-                <div style={{ marginBottom: '20px' }}>
-                  <label
-                    htmlFor="email-input"
-                    style={{
-                      display: 'block',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      color: 'var(--color-text-primary)',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    Email Address
-                  </label>
-                  <input
-                    id="email-input"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      fontSize: '15px',
-                      borderRadius: 'var(--radius-lg)',
-                      border: '1.5px solid var(--color-border)',
-                      outline: 'none',
-                      fontFamily: 'var(--font-body)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                    autoFocus
-                  />
-                  <span
-                    style={{
-                      display: 'block',
-                      fontSize: '12px',
-                      color: 'var(--color-text-tertiary)',
-                      marginTop: '6px',
-                    }}
-                  >
-                    Recommended for employers and contractors
-                  </span>
-                </div>
+        {/* Phone Login Form */}
+        {authMode === 'phone' && (
+          <form onSubmit={handlePhoneSubmit}>
+            <div style={{ marginBottom: '24px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '13.5px',
+                  fontWeight: '600',
+                  color: 'var(--color-text-primary)',
+                  marginBottom: '8px',
+                }}
+              >
+                Mobile Phone Number
+              </label>
 
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="md"
-                  fullWidth
-                  loading={loading}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1.5px solid var(--color-border)',
+                  background: '#FFFFFF',
+                  overflow: 'hidden',
+                  transition: 'border-color var(--transition-fast)',
+                }}
+              >
+                <span
+                  style={{
+                    padding: '12px 14px',
+                    background: 'var(--color-background-subtle)',
+                    borderRight: '1px solid var(--color-border)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: 'var(--color-text-secondary)',
+                    userSelect: 'none',
+                  }}
                 >
-                  Send Magic Link
-                  <ArrowRight size={16} />
-                </Button>
-              </form>
-            )}
-          </div>
+                  +977
+                </span>
+
+                <input
+                  type="tel"
+                  placeholder="98XXXXXXXX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: 'none',
+                    outline: 'none',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '15px',
+                    letterSpacing: '0.02em',
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: 'var(--color-text-tertiary)',
+                  marginTop: '8px',
+                }}
+              >
+                We will send a 6-digit verification code via SMS
+              </p>
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              size="lg"
+              loading={loading}
+              disabled={loading}
+              style={{
+                background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))',
+                boxShadow: '0 4px 14px rgba(13, 43, 82, 0.28)',
+              }}
+            >
+              Send Verification Code
+              <ArrowRight size={16} />
+            </Button>
+          </form>
         )}
 
+        {/* Security / Verification Seal */}
         <div
           style={{
-            marginTop: '28px',
+            marginTop: '32px',
             paddingTop: '20px',
             borderTop: '1px solid var(--color-border-light)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '6px',
+            gap: '8px',
             color: 'var(--color-text-tertiary)',
             fontSize: '12px',
           }}
         >
           <ShieldCheck size={14} color="var(--color-secondary)" />
-          Protected by Supabase Auth & CTEVT Verification Network
+          <span>Protected by CTEVT Credential Network</span>
         </div>
       </div>
     </div>

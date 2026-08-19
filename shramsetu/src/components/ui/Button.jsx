@@ -40,25 +40,25 @@ export function Button({
 
   const variants = {
     primary: {
-      background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))',
+      background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))',
       color: '#FFFFFF',
-      boxShadow: '0 3px 12px rgba(50, 140, 189, 0.3)',
+      boxShadow: '0 3px 12px rgba(13, 43, 82, 0.28)',
     },
     secondary: {
-      background: 'var(--color-secondary)',
+      background: 'linear-gradient(135deg, var(--color-secondary-600), var(--color-secondary-700))',
       color: '#FFFFFF',
-      boxShadow: '0 3px 12px rgba(13, 148, 136, 0.3)',
+      boxShadow: '0 3px 12px rgba(200, 30, 39, 0.28)',
     },
     outline: {
       background: '#FFFFFF',
-      color: 'var(--color-primary-500)',
-      border: '1.5px solid var(--color-primary-300)',
+      color: 'var(--color-primary-700)',
+      border: '1.5px solid var(--color-primary-200)',
       boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
     },
     danger: {
       background: 'var(--color-danger)',
       color: '#FFFFFF',
-      boxShadow: '0 3px 12px rgba(239, 68, 68, 0.3)',
+      boxShadow: '0 3px 12px rgba(200, 30, 39, 0.25)',
     },
     ghost: {
       background: 'transparent',

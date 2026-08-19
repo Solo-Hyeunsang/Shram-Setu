@@ -24,24 +24,16 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <div
+              <img
+                src="/logo.png"
+                alt="Shram Setu Logo"
                 style={{
                   width: '34px',
                   height: '34px',
+                  objectFit: 'contain',
                   borderRadius: 'var(--radius-md)',
-                  background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FFFFFF',
-                  fontWeight: '700',
-                  fontSize: '15px',
-                  fontFamily: 'var(--font-display)',
-                  boxShadow: '0 2px 8px rgba(50, 140, 189, 0.25)',
                 }}
-              >
-                SS
-              </div>
+              />
               <span
                 style={{
                   fontFamily: 'var(--font-display)',

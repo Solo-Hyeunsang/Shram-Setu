@@ -19,13 +19,13 @@ export function CTABanner() {
             maxWidth: '1060px',
             margin: '0 auto',
             borderRadius: 'var(--radius-2xl)',
-            background: 'linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-500) 50%, var(--color-primary-700) 100%)',
+            background: 'linear-gradient(135deg, var(--color-primary-800) 0%, var(--color-primary-700) 50%, #9B151C 100%)',
             padding: '64px 36px',
             textAlign: 'center',
             color: '#FFFFFF',
             position: 'relative',
             overflow: 'hidden',
-            boxShadow: '0 16px 40px rgba(50, 140, 189, 0.2)',
+            boxShadow: '0 16px 40px rgba(13, 43, 82, 0.25)',
           }}
         >
           {/* Subtle background circle decoration */}

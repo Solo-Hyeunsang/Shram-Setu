@@ -17,27 +17,27 @@ export const TRADES = [
 // ─── Verification Status ──────────────────────────────────────────
 export const VERIFICATION_STATUS = {
   unverified: { label: 'Unverified', color: 'var(--color-text-tertiary)', bgColor: '#F1F5F9', icon: 'shield-x' },
-  pending: { label: 'Pending', color: 'var(--color-warning)', bgColor: '#FEF3CD', icon: 'shield-alert' },
-  in_review: { label: 'In Review', color: 'var(--color-warning)', bgColor: '#FEF3CD', icon: 'shield-ellipsis' },
-  verified: { label: 'Verified', color: 'var(--color-secondary)', bgColor: '#D1FAE5', icon: 'shield-check' },
-  rejected: { label: 'Rejected', color: 'var(--color-danger)', bgColor: '#FEE2E2', icon: 'shield-ban' },
-  more_info_needed: { label: 'More Info Needed', color: 'var(--color-warning)', bgColor: '#FEF3CD', icon: 'shield-question' },
+  pending: { label: 'Pending', color: '#D97706', bgColor: '#FEF3CD', icon: 'shield-alert' },
+  in_review: { label: 'In Review', color: '#1B4D89', bgColor: '#EEF4FA', icon: 'shield-ellipsis' },
+  verified: { label: 'Verified', color: '#16A34A', bgColor: '#D1FAE5', icon: 'shield-check' },
+  rejected: { label: 'Rejected', color: '#C81E27', bgColor: '#FEF2F2', icon: 'shield-ban' },
+  more_info_needed: { label: 'More Info Needed', color: '#D97706', bgColor: '#FEF3CD', icon: 'shield-question' },
 };
 
 // ─── Job Status ───────────────────────────────────────────────────
 export const JOB_STATUS = {
-  open: { label: 'Open', color: '#059669', bgColor: '#D1FAE5' },
+  open: { label: 'Open', color: '#16A34A', bgColor: '#D1FAE5' },
   applications_received: { label: 'Applications Received', color: '#D97706', bgColor: '#FEF3CD' },
-  assigned: { label: 'Worker Assigned', color: '#328CBD', bgColor: '#D0EAF5' },
-  completed: { label: 'Completed', color: '#059669', bgColor: '#D1FAE5' },
-  cancelled: { label: 'Cancelled', color: '#DC2626', bgColor: '#FEE2E2' },
+  assigned: { label: 'Worker Assigned', color: '#1B4D89', bgColor: '#EEF4FA' },
+  completed: { label: 'Completed', color: '#16A34A', bgColor: '#D1FAE5' },
+  cancelled: { label: 'Cancelled', color: '#C81E27', bgColor: '#FEF2F2' },
 };
 
 // ─── Application Status ──────────────────────────────────────────
 export const APPLICATION_STATUS = {
   pending: { label: 'Pending', color: '#D97706', bgColor: '#FEF3CD' },
-  accepted: { label: 'Accepted', color: '#059669', bgColor: '#D1FAE5' },
-  rejected: { label: 'Rejected', color: '#DC2626', bgColor: '#FEE2E2' },
+  accepted: { label: 'Accepted', color: '#16A34A', bgColor: '#D1FAE5' },
+  rejected: { label: 'Rejected', color: '#C81E27', bgColor: '#FEF2F2' },
 };
 
 // ─── Availability ─────────────────────────────────────────────────

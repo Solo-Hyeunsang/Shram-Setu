@@ -32,16 +32,18 @@ Use these tokens consistently. Prefer CSS variables / Tailwind theme extension.
 
 | Token | Hex | Tailwind-ish | Usage |
 |-------|-----|--------------|--------|
-| **Primary** | `#1E40AF` | blue-800 | Buttons, links, primary actions — trust & professionalism |
-| **Primary Light** | `#3B82F6` | blue-500 | Hover states, accents |
-| **Secondary** | `#059669` | emerald-600 | Success, verification badges, positive indicators |
-| **Accent** | `#F59E0B` | amber-500 | Star ratings, highlights, attention |
-| **Background** | `#F8FAFC` | slate-50 | Page background |
+| **Primary (Deep Navy)** | `#0D2B52` | navy-900 | Buttons, navbars, primary brand identity — "श्रम" & Bridge |
+| **Primary Light** | `#1B4D89` | blue-700 | Hover states, active links, accents |
+| **Secondary (Crimson)** | `#C81E27` | red-700 | National flag crest, secondary CTAs — "सेतु" |
+| **Success (Verified)** | `#16A34A` | emerald-600 | CTEVT verification badges, positive indicators |
+| **Accent (Gold)** | `#D97706` | amber-600 | Star ratings, skill highlights, review counts |
+| **Background** | `#FFFFFF` | white | Crisp clean surface background |
+| **Background Subtle** | `#F8FAFC` | slate-50 | Section backgrounds, card containers |
 | **Surface** | `#FFFFFF` | white | Cards, modals, panels |
-| **Text Primary** | `#0F172A` | slate-900 | Headings, body |
-| **Text Secondary** | `#64748B` | slate-500 | Captions, metadata |
-| **Danger** | `#DC2626` | red-600 | Errors, destructive actions, rejections |
-| **Warning** | `#D97706` | amber-600 | Pending, “more info needed” |
+| **Text Primary** | `#0A192F` | slate-950 | Headings, high-contrast body text |
+| **Text Secondary** | `#475569` | slate-600 | Captions, descriptions, metadata |
+| **Danger** | `#C81E27` | red-700 | Errors, destructive actions, rejections |
+| **Warning** | `#D97706` | amber-600 | Pending verification, alerts |
 | **Border** | `#E2E8F0` | slate-200 | Card borders, dividers |
 
 ### Semantic status colors

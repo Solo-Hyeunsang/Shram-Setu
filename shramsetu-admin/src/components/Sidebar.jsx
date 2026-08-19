@@ -52,24 +52,16 @@ export function Sidebar() {
           gap: '12px',
         }}
       >
-        <div
+        <img
+          src="/logo.png"
+          alt="Shram Setu Logo"
           style={{
             width: '36px',
             height: '36px',
+            objectFit: 'contain',
             borderRadius: 'var(--radius-md)',
-            background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#FFFFFF',
-            fontWeight: '700',
-            fontSize: '15px',
-            fontFamily: 'var(--font-display)',
-            boxShadow: '0 2px 8px rgba(50, 140, 189, 0.25)',
           }}
-        >
-          SS
-        </div>
+        />
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: '700', fontSize: '16px', color: 'var(--color-text-primary)' }}>
             Shram Setu

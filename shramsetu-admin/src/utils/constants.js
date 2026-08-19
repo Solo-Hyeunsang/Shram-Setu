@@ -16,18 +16,18 @@ export const TRADES = [
 export const VERIFICATION_STATUS = {
   unverified: { label: 'Unverified', color: '#64748B', bgColor: '#F1F5F9' },
   pending: { label: 'Pending Review', color: '#D97706', bgColor: '#FEF3CD' },
-  in_review: { label: 'In Review', color: '#328CBD', bgColor: '#E0F2FE' },
-  approved: { label: 'Approved (Verified)', color: '#0D9488', bgColor: '#CCFBF1' },
-  rejected: { label: 'Rejected', color: '#EF4444', bgColor: '#FEE2E2' },
-  more_info_needed: { label: 'More Info Needed', color: '#F59E0B', bgColor: '#FEF3C7' },
+  in_review: { label: 'In Review', color: '#1B4D89', bgColor: '#EEF4FA' },
+  approved: { label: 'Approved (Verified)', color: '#16A34A', bgColor: '#D1FAE5' },
+  rejected: { label: 'Rejected', color: '#C81E27', bgColor: '#FEF2F2' },
+  more_info_needed: { label: 'More Info Needed', color: '#D97706', bgColor: '#FEF3CD' },
 };
 
 export const JOB_STATUS = {
-  open: { label: 'Open', color: '#0D9488', bgColor: '#CCFBF1' },
+  open: { label: 'Open', color: '#16A34A', bgColor: '#D1FAE5' },
   applications_received: { label: 'Applications Received', color: '#D97706', bgColor: '#FEF3CD' },
-  assigned: { label: 'Assigned', color: '#328CBD', bgColor: '#E0F2FE' },
-  completed: { label: 'Completed', color: '#0D9488', bgColor: '#CCFBF1' },
-  cancelled: { label: 'Cancelled', color: '#EF4444', bgColor: '#FEE2E2' },
+  assigned: { label: 'Assigned', color: '#1B4D89', bgColor: '#EEF4FA' },
+  completed: { label: 'Completed', color: '#16A34A', bgColor: '#D1FAE5' },
+  cancelled: { label: 'Cancelled', color: '#C81E27', bgColor: '#FEF2F2' },
 };
 
 export const DISTRICTS = [

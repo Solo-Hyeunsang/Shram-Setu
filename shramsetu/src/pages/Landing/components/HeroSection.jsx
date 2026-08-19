@@ -107,7 +107,7 @@ export function HeroSection() {
               size="lg"
               onClick={() => navigate('/search/workers')}
               style={{
-                boxShadow: '0 4px 16px rgba(50, 140, 189, 0.35)',
+                boxShadow: '0 4px 16px rgba(13, 43, 82, 0.35)',
               }}
             >
               Find Skilled Workers

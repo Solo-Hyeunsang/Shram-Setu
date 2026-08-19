@@ -1,5 +1,6 @@
-// Shram Setu — Auth Context
+// Shram Setu — Auth Context (Unified Clerk + Supabase + Local Fallback)
 import { createContext, useState, useEffect, useCallback } from 'react';
+import { useUser, useSession, useClerk } from '@clerk/react';
 import { supabase } from '../api/supabaseClient';
 import { getUserProfile } from '../api/authApi';
 
@@ -10,83 +11,134 @@ export const AuthContext = createContext({
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
+  saveProfile: async () => {},
 });
 
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null);
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { isLoaded: isUserLoaded, user: clerkUser } = useUser();
+  const { isLoaded: isSessionLoaded, session: clerkSession } = useSession();
+  const clerk = useClerk();
+
+  // Local state initialized with localStorage fallback
+  const [localUser, setLocalUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shramsetu_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [profile, setProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shramsetu_profile');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  // Active user normalized
+  const appUser = clerkUser
+    ? {
+        id: clerkUser.id,
+        email: clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || null,
+        phone: clerkUser.primaryPhoneNumber?.phoneNumber || clerkUser.phoneNumbers?.[0]?.phoneNumber || null,
+        fullName: clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || null,
+        rawUser: clerkUser,
+      }
+    : localUser;
+
+  // Persist user
+  useEffect(() => {
+    if (clerkUser) {
+      const u = {
+        id: clerkUser.id,
+        email: clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || null,
+        phone: clerkUser.primaryPhoneNumber?.phoneNumber || clerkUser.phoneNumbers?.[0]?.phoneNumber || null,
+        fullName: clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || null,
+      };
+      setLocalUser(u);
+      localStorage.setItem('shramsetu_user', JSON.stringify(u));
+    }
+  }, [clerkUser]);
 
   const loadProfile = useCallback(async (userId) => {
-    if (!userId) {
-      setProfile(null);
-      return;
-    }
-    const { data, error } = await getUserProfile(userId);
-    if (!error && data) {
-      // Check suspended status
-      if (data.is_suspended) {
-        await supabase.auth.signOut();
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        return;
+    if (!userId) return;
+    setProfileLoading(true);
+    try {
+      const { data, error } = await getUserProfile(userId);
+      if (!error && data) {
+        if (data.is_suspended) {
+          await clerk.signOut();
+          setProfile(null);
+          localStorage.removeItem('shramsetu_profile');
+          return;
+        }
+        setProfile(data);
+        localStorage.setItem('shramsetu_profile', JSON.stringify(data));
       }
-      setProfile(data);
+    } catch (err) {
+      console.warn('Profile fetch error:', err);
+    } finally {
+      setProfileLoading(false);
     }
-  }, []);
+  }, [clerk]);
 
   const refreshProfile = useCallback(async () => {
-    if (user?.id) {
-      await loadProfile(user.id);
+    const activeId = clerkUser?.id || localUser?.id;
+    if (activeId) {
+      await loadProfile(activeId);
     }
-  }, [user, loadProfile]);
+  }, [clerkUser?.id, localUser?.id, loadProfile]);
+
+  const saveProfile = useCallback(async (newProfileData) => {
+    setProfile(newProfileData);
+    localStorage.setItem('shramsetu_profile', JSON.stringify(newProfileData));
+    if (!localUser && newProfileData?.id) {
+      const u = {
+        id: newProfileData.id,
+        email: newProfileData.email,
+        phone: newProfileData.phone,
+        fullName: newProfileData.full_name,
+      };
+      setLocalUser(u);
+      localStorage.setItem('shramsetu_user', JSON.stringify(u));
+    }
+  }, [localUser]);
 
   useEffect(() => {
-    // Load initial session
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        loadProfile(s.user.id).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, s) => {
-        setSession(s);
-        setUser(s?.user ?? null);
-        if (s?.user) {
-          loadProfile(s.user.id);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [loadProfile]);
+    if (isUserLoaded && clerkUser?.id) {
+      loadProfile(clerkUser.id);
+    }
+  }, [isUserLoaded, clerkUser?.id, loadProfile]);
 
   const handleSignOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setUser(null);
+    try {
+      await clerk.signOut();
+    } catch (err) {
+      console.warn('SignOut error:', err);
+    }
     setProfile(null);
-  }, []);
+    setLocalUser(null);
+    localStorage.removeItem('shramsetu_user');
+    localStorage.removeItem('shramsetu_profile');
+  }, [clerk]);
+
+  const authLoading = (!isUserLoaded && !localUser) || profileLoading;
 
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: appUser,
         profile,
-        session,
-        loading,
+        session: clerkSession || (appUser ? { user: appUser } : null),
+        loading: authLoading,
         signOut: handleSignOut,
         refreshProfile,
+        saveProfile,
       }}
     >
       {children}

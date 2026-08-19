@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../api/supabaseClient';
 
 export function Onboarding() {
-  const { user, refreshProfile } = useAuth();
+  const { user, refreshProfile, saveProfile } = useAuth();
   const [role, setRole] = useState('worker'); // 'worker' | 'employer'
   const [fullName, setFullName] = useState('');
   const [district, setDistrict] = useState('Kathmandu');
@@ -29,20 +29,22 @@ export function Onboarding() {
     setLoading(true);
     setError(null);
 
+    const userId = user?.id || `user_${Date.now()}`;
+    const profileData = {
+      id: userId,
+      role,
+      full_name: fullName.trim(),
+      district,
+      phone: user?.phone || null,
+      email: user?.email || null,
+      is_suspended: false,
+    };
+
     try {
-      const userId = user?.id || `demo-${Date.now()}`;
-
       // 1. Insert/Upsert into profiles
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: userId,
-        role,
-        full_name: fullName,
-        district,
-        phone: user?.phone || null,
-        email: user?.email || null,
-      });
+      try {
+        await supabase.from('profiles').upsert(profileData);
 
-      if (!profileError) {
         if (role === 'worker') {
           await supabase.from('worker_profiles').upsert({
             id: userId,
@@ -57,13 +59,24 @@ export function Onboarding() {
             company_name: companyName || null,
           });
         }
+      } catch (dbErr) {
+        console.warn('Database save warning (using local sync):', dbErr);
       }
 
-      await refreshProfile();
-      navigate(role === 'worker' ? '/worker/dashboard' : '/employer/dashboard');
+      if (saveProfile) {
+        await saveProfile(profileData);
+      }
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+
+      navigate(role === 'worker' ? '/worker/dashboard' : '/employer/dashboard', { replace: true });
     } catch (err) {
-      // In development fallback, navigate smoothly
-      navigate(role === 'worker' ? '/worker/dashboard' : '/employer/dashboard');
+      console.error('Onboarding Error:', err);
+      if (saveProfile) {
+        await saveProfile(profileData);
+      }
+      navigate(role === 'worker' ? '/worker/dashboard' : '/employer/dashboard', { replace: true });
     } finally {
       setLoading(false);
     }
@@ -93,6 +106,17 @@ export function Onboarding() {
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <img
+            src="/logo.png"
+            alt="Shram Setu Logo"
+            style={{
+              width: '46px',
+              height: '46px',
+              objectFit: 'contain',
+              margin: '0 auto 16px',
+              display: 'block',
+            }}
+          />
           <h2
             style={{
               fontSize: '24px',

@@ -2,32 +2,53 @@
 
 /* =============================================================================
    Shram Setu — Design System & Global Styles
-   Clean White Background + Primary #328cbd Theme
+   Logo-Inspired Theme:
+     - Primary: Patriotic Deep Navy (#0D2B52 / #123B6E) from "श्रम" & Bridge
+     - Secondary: Nepal Flag Crimson (#C81E27 / #E02424) from "सेतु" & Crest
+     - Accent: Gold/Amber (#D97706) for Ratings
+     - Success: Emerald (#16A34A) for CTEVT Verification
+     - Surfaces: Clean White (#FFFFFF) & Crisp Slate (#F8FAFC)
    ============================================================================= */
 
 :root {
-  /* Primary palette built from #328cbd */
-  --color-primary-50: #F0F7FB;
-  --color-primary-100: #DCEDF7;
-  --color-primary-200: #B9DCEF;
-  --color-primary-300: #88C4E3;
-  --color-primary-400: #52A9D5;
-  --color-primary-500: #328CBD;
-  --color-primary-600: #25739F;
-  --color-primary-700: #1F5C80;
-  --color-primary-800: #1D4E6B;
-  --color-primary-900: #1C425A;
-  --color-primary-950: #102B3D;
+  /* Primary Navy Palette (from logo's "श्रम", bridge silhouette, and Himalayan peaks) */
+  --color-primary-50: #EEF4FA;
+  --color-primary-100: #D9E6F4;
+  --color-primary-200: #B7D0E9;
+  --color-primary-300: #89B2DB;
+  --color-primary-400: #548EC9;
+  --color-primary-500: #1B4D89;
+  --color-primary-600: #123B6E;
+  --color-primary-700: #0D2B52; /* Core Navy from Logo */
+  --color-primary-800: #091F3D;
+  --color-primary-900: #06152B;
+  --color-primary-950: #030B17;
 
-  /* Semantic colors */
-  --color-secondary: #0D9488;
-  --color-secondary-light: #14B8A6;
-  --color-accent: #F59E0B;
-  --color-accent-light: #FBBF24;
-  --color-danger: #EF4444;
-  --color-danger-light: #F87171;
-  --color-warning: #F59E0B;
+  /* Secondary Crimson Red Palette (from logo's "सेतु" & National Flag arch) */
+  --color-secondary-50: #FEF2F2;
+  --color-secondary-100: #FEE2E2;
+  --color-secondary-200: #FECACA;
+  --color-secondary-300: #FCA5A5;
+  --color-secondary-400: #F87171;
+  --color-secondary-500: #E02424;
+  --color-secondary-600: #C81E27; /* Core Crimson from Logo */
+  --color-secondary-700: #A5171F;
+  --color-secondary-800: #841419;
+  --color-secondary-900: #681216;
+  --color-secondary-950: #3E0507;
+
+  /* Semantic Aliases */
+  --color-primary: var(--color-primary-700);
+  --color-secondary: var(--color-secondary-600);
+  --color-secondary-light: var(--color-secondary-500);
+  --color-accent: #D97706;
+  --color-accent-light: #F59E0B;
+  --color-danger: var(--color-secondary-600);
+  --color-danger-light: var(--color-secondary-400);
+  --color-warning: #D97706;
   --color-warning-light: #FCD34D;
+  --color-success: #16A34A;
+  --color-success-light: #22C55E;
 
   /* Clean White Surfaces */
   --color-background: #FFFFFF;
@@ -36,7 +57,7 @@
   --color-surface-elevated: #FFFFFF;
 
   /* Crisp Modern Text */
-  --color-text-primary: #0F172A;
+  --color-text-primary: #0A192F;
   --color-text-secondary: #475569;
   --color-text-tertiary: #94A3B8;
   --color-text-inverse: #FFFFFF;
@@ -46,13 +67,13 @@
   --color-border-light: #F1F5F9;
   --color-border-focus: var(--color-primary-400);
 
-  /* Refined Soft Elevation Shadows */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03);
-  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.03);
-  --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04);
-  --shadow-xl: 0 20px 40px rgba(15, 23, 42, 0.1), 0 8px 16px rgba(15, 23, 42, 0.05);
-  --shadow-card-hover: 0 12px 32px rgba(50, 140, 189, 0.12), 0 4px 12px rgba(15, 23, 42, 0.04);
+  /* Refined Elevation Shadows with Navy subtle tint */
+  --shadow-xs: 0 1px 2px rgba(13, 43, 82, 0.04);
+  --shadow-sm: 0 1px 3px rgba(13, 43, 82, 0.06), 0 1px 2px rgba(13, 43, 82, 0.03);
+  --shadow-md: 0 4px 16px rgba(13, 43, 82, 0.06), 0 2px 6px rgba(13, 43, 82, 0.03);
+  --shadow-lg: 0 10px 30px rgba(13, 43, 82, 0.08), 0 4px 10px rgba(13, 43, 82, 0.04);
+  --shadow-xl: 0 20px 40px rgba(13, 43, 82, 0.1), 0 8px 16px rgba(13, 43, 82, 0.05);
+  --shadow-card-hover: 0 12px 32px rgba(13, 43, 82, 0.12), 0 4px 12px rgba(13, 43, 82, 0.04);
 
   /* Typography */
   --font-display: 'Outfit', system-ui, sans-serif;
@@ -114,13 +135,13 @@ p {
 }
 
 a {
-  color: var(--color-primary-500);
+  color: var(--color-primary-600);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
 a:hover {
-  color: var(--color-primary-600);
+  color: var(--color-secondary-600);
 }
 
 img {
@@ -169,17 +190,31 @@ button {
   border-color: var(--color-primary-200);
 }
 
-/* Clean Hero Background Glow */
+/* Clean Hero Background Glow with Logo Navy & Crimson ambient lights */
 .clean-hero-bg {
   background:
-    radial-gradient(ellipse 60% 40% at 50% -10%, rgba(50, 140, 189, 0.12) 0%, transparent 80%),
-    radial-gradient(ellipse 40% 30% at 80% 30%, rgba(50, 140, 189, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% -10%, rgba(13, 43, 82, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 85% 25%, rgba(200, 30, 39, 0.04) 0%, transparent 60%),
     #FFFFFF;
 }
 
-/* Clean Gradient Text Accent */
+/* Logo Gradient Text Accent (Deep Navy to Nepal Crimson) */
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-700) 100%);
+  background: linear-gradient(135deg, #0D2B52 0%, #1A4E8C 45%, #C81E27 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-navy {
+  background: linear-gradient(135deg, #0D2B52 0%, #1B4D89 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-crimson {
+  background: linear-gradient(135deg, #C81E27 0%, #E02424 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -249,6 +284,6 @@ button {
 
 /* Selection */
 ::selection {
-  background: var(--color-primary-100);
+  background-color: var(--color-primary-100);
   color: var(--color-primary-900);
 }

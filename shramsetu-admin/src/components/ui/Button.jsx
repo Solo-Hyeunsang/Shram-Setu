@@ -39,25 +39,25 @@ export function Button({
 
   const variants = {
     primary: {
-      background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600))',
+      background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))',
       color: '#FFFFFF',
-      boxShadow: '0 2px 8px rgba(50, 140, 189, 0.25)',
+      boxShadow: '0 2px 8px rgba(13, 43, 82, 0.25)',
     },
     secondary: {
-      background: 'var(--color-secondary)',
+      background: 'linear-gradient(135deg, var(--color-secondary-600), var(--color-secondary-700))',
       color: '#FFFFFF',
-      boxShadow: '0 2px 8px rgba(13, 148, 136, 0.25)',
+      boxShadow: '0 2px 8px rgba(200, 30, 39, 0.25)',
     },
     outline: {
       background: '#FFFFFF',
-      color: 'var(--color-text-primary)',
+      color: 'var(--color-primary-700)',
       border: '1.5px solid var(--color-border)',
       boxShadow: 'var(--shadow-xs)',
     },
     danger: {
       background: 'var(--color-danger)',
       color: '#FFFFFF',
-      boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)',
+      boxShadow: '0 2px 8px rgba(200, 30, 39, 0.25)',
     },
     ghost: {
       background: 'transparent',

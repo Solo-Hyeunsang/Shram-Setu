@@ -87,8 +87,8 @@ export function JobOversight() {
       accessor: 'status',
       render: (row) => (
         <Badge
-          color={row.status === 'open' ? '#0D9488' : row.status === 'completed' ? '#328CBD' : '#EF4444'}
-          bgColor={row.status === 'open' ? '#CCFBF1' : row.status === 'completed' ? '#E0F2FE' : '#FEE2E2'}
+          color={row.status === 'open' ? '#16A34A' : row.status === 'completed' ? 'var(--color-primary-700)' : 'var(--color-secondary-600)'}
+          bgColor={row.status === 'open' ? '#D1FAE5' : row.status === 'completed' ? 'var(--color-primary-50)' : 'var(--color-secondary-50)'}
         >
           {row.status.toUpperCase()}
         </Badge>

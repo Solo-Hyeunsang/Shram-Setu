@@ -106,8 +106,8 @@ export function UserManagement() {
       render: (row) => (
         <div>
           <Badge
-            color={row.role === 'worker' ? '#328CBD' : '#0D9488'}
-            bgColor={row.role === 'worker' ? '#E0F2FE' : '#CCFBF1'}
+            color={row.role === 'worker' ? 'var(--color-primary-700)' : 'var(--color-secondary-600)'}
+            bgColor={row.role === 'worker' ? 'var(--color-primary-50)' : 'var(--color-secondary-50)'}
           >
             {row.role.toUpperCase()}
           </Badge>
