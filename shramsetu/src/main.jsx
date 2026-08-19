@@ -1,14 +1,12 @@
 import { ClerkProvider } from '@clerk/react';
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.jsx';
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-if (!PUBLISHABLE_KEY) {
-  console.warn('Missing VITE_CLERK_PUBLISHABLE_KEY in environment variables.');
-}
+const PUBLISHABLE_KEY =
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ||
+  'pk_test_ZGl2aW5lLXJlcHRpbGUtNTM2Mi5jbGVyay5hY2NvdW50cy5kZXYk';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
