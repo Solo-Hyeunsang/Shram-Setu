@@ -1,5 +1,5 @@
 // Shram Setu — Worker Search Page (World-Class UI/UX & Perfectly Aligned Grid)
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Search, Filter, ShieldCheck, MapPin, X, Phone,
@@ -15,6 +15,7 @@ import { VerificationBadge } from '../../components/ui/VerificationBadge';
 import { StarRating } from '../../components/ui/StarRating';
 import { TRADES, DISTRICTS } from '../../utils/constants';
 import { formatWage, getInitials } from '../../utils/formatters';
+import { supabase } from '../../api/supabaseClient';
 
 const TRADE_CHIPS = [
   { slug: 'all', label: 'All Trades', icon: Sparkles },
