@@ -24,12 +24,16 @@ export function Login() {
 
     if (authError) {
       // In development fallback, allow quick demo login
-      if (email.includes('admin')) {
-        setDemoUser('admin');
-        navigate('/admin/dashboard');
+      if (import.meta.env.DEV) {
+        if (email.includes('admin')) {
+          setDemoUser('admin');
+          navigate('/admin/dashboard');
+        } else {
+          setDemoUser('verifier');
+          navigate('/verifier/queue');
+        }
       } else {
-        setDemoUser('verifier');
-        navigate('/verifier/queue');
+        setError(authError.message || 'Login failed. Check your credentials.');
       }
     } else {
       navigate('/admin/dashboard');
@@ -194,31 +198,33 @@ export function Login() {
         </form>
 
         {/* Quick Demo Access Bar */}
-        <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', textAlign: 'center', marginBottom: '12px', fontWeight: '600' }}>
-            QUICK ACCESS DEMO ROLES
+        {import.meta.env.DEV && (
+          <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--color-border)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', textAlign: 'center', marginBottom: '12px', fontWeight: '600' }}>
+              QUICK ACCESS DEMO ROLES
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickDemo('admin')}
+                style={{ fontSize: '12px' }}
+              >
+                <Shield size={14} color="var(--color-primary-500)" />
+                Admin Portal
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickDemo('verifier')}
+                style={{ fontSize: '12px' }}
+              >
+                <UserCheck size={14} color="var(--color-secondary)" />
+                CTEVT Verifier
+              </Button>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleQuickDemo('admin')}
-              style={{ fontSize: '12px' }}
-            >
-              <Shield size={14} color="var(--color-primary-500)" />
-              Admin Portal
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleQuickDemo('verifier')}
-              style={{ fontSize: '12px' }}
-            >
-              <UserCheck size={14} color="var(--color-secondary)" />
-              CTEVT Verifier
-            </Button>
-          </div>
-        </div>
+        )}
 
         <div
           style={{

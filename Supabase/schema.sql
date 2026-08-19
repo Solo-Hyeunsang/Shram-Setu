@@ -515,8 +515,12 @@ SET search_path = public
 AS $$
 DECLARE
   v_role public.user_role;
+  v_reviewee_id UUID;
 BEGIN
-  SELECT role INTO v_role FROM public.profiles WHERE id = NEW.reviewee_id;
+  -- On DELETE, NEW is null; use OLD instead
+  v_reviewee_id := COALESCE(NEW.reviewee_id, OLD.reviewee_id);
+
+  SELECT role INTO v_role FROM public.profiles WHERE id = v_reviewee_id;
 
   IF v_role = 'worker' THEN
     UPDATE public.worker_profiles
@@ -524,22 +528,22 @@ BEGIN
       average_rating = (
         SELECT COALESCE(ROUND(AVG(rating)::numeric, 2), 0)
         FROM public.reviews
-        WHERE reviewee_id = NEW.reviewee_id
+        WHERE reviewee_id = v_reviewee_id
       ),
       total_reviews = (
         SELECT COUNT(*)
         FROM public.reviews
-        WHERE reviewee_id = NEW.reviewee_id
+        WHERE reviewee_id = v_reviewee_id
       )
-    WHERE id = NEW.reviewee_id;
+    WHERE id = v_reviewee_id;
   END IF;
 
-  RETURN NEW;
+  RETURN COALESCE(NEW, OLD);
 END;
 $$;
 
 CREATE TRIGGER trg_update_worker_rating
-  AFTER INSERT ON public.reviews
+  AFTER INSERT OR UPDATE OR DELETE ON public.reviews
   FOR EACH ROW EXECUTE FUNCTION public.update_worker_rating();
 
 -- -----------------------------------------------------------------------------
@@ -553,8 +557,11 @@ SET search_path = public
 AS $$
 DECLARE
   v_role public.user_role;
+  v_reviewee_id UUID;
 BEGIN
-  SELECT role INTO v_role FROM public.profiles WHERE id = NEW.reviewee_id;
+  v_reviewee_id := COALESCE(NEW.reviewee_id, OLD.reviewee_id);
+
+  SELECT role INTO v_role FROM public.profiles WHERE id = v_reviewee_id;
 
   IF v_role = 'employer' THEN
     UPDATE public.employer_profiles
@@ -562,22 +569,22 @@ BEGIN
       average_rating = (
         SELECT COALESCE(ROUND(AVG(rating)::numeric, 2), 0)
         FROM public.reviews
-        WHERE reviewee_id = NEW.reviewee_id
+        WHERE reviewee_id = v_reviewee_id
       ),
       total_reviews = (
         SELECT COUNT(*)
         FROM public.reviews
-        WHERE reviewee_id = NEW.reviewee_id
+        WHERE reviewee_id = v_reviewee_id
       )
-    WHERE id = NEW.reviewee_id;
+    WHERE id = v_reviewee_id;
   END IF;
 
-  RETURN NEW;
+  RETURN COALESCE(NEW, OLD);
 END;
 $$;
 
 CREATE TRIGGER trg_update_employer_rating
-  AFTER INSERT ON public.reviews
+  AFTER INSERT OR UPDATE OR DELETE ON public.reviews
   FOR EACH ROW EXECUTE FUNCTION public.update_employer_rating();
 
 -- -----------------------------------------------------------------------------
@@ -630,10 +637,13 @@ BEGIN
       verified_by_institution_id = NEW.institution_id
     WHERE id = NEW.worker_id;
 
-    -- Mark related certifications as institution-verified
+    -- Only mark certs uploaded before this review as institution-verified
+    -- (not ALL worker certs, which would verify unreviewed documents)
     UPDATE public.certifications
     SET is_institution_verified = TRUE
-    WHERE worker_id = NEW.worker_id;
+    WHERE worker_id = NEW.worker_id
+      AND created_at <= COALESCE(NEW.reviewed_at, NOW())
+      AND is_institution_verified = FALSE;
 
   ELSIF NEW.status = 'rejected' THEN
     UPDATE public.worker_profiles
@@ -651,9 +661,11 @@ BEGIN
     WHERE id = NEW.worker_id;
 
   ELSIF NEW.status = 'pending' THEN
+    -- Don't downgrade already-verified workers to pending on re-submission
     UPDATE public.worker_profiles
     SET verification_status = 'pending'
-    WHERE id = NEW.worker_id;
+    WHERE id = NEW.worker_id
+      AND verification_status NOT IN ('verified', 'in_review');
   END IF;
 
   RETURN NEW;
@@ -856,25 +868,24 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  -- Profile is intentionally created by the application so that role,
-  -- full_name, etc. can be set correctly during onboarding.
-  -- Uncomment below only if you want a minimal auto-profile:
-  --
-  -- INSERT INTO public.profiles (id, role, full_name, phone, email)
-  -- VALUES (
-  --   NEW.id,
-  --   'worker',  -- default; app should update
-  --   COALESCE(NEW.raw_user_meta_data->>'full_name', 'New User'),
-  --   NEW.phone,
-  --   NEW.email
-  -- );
+  -- Create a minimal profile on auth signup so RLS queries work immediately.
+  -- The app updates role, full_name, etc. during onboarding.
+  INSERT INTO public.profiles (id, role, full_name, phone, email)
+  VALUES (
+    NEW.id,
+    'worker',  -- default role; app updates during onboarding
+    COALESCE(NULLIF(NEW.raw_user_meta_data->>'full_name', ''), 'New User'),
+    NEW.phone,
+    NEW.email
+  )
+  ON CONFLICT (id) DO NOTHING;  -- safe if profile already exists
   RETURN NEW;
 END;
 $$;
 
--- CREATE TRIGGER on_auth_user_created
---   AFTER INSERT ON auth.users
---   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- =============================================================================
 -- ROW-LEVEL SECURITY (RLS)

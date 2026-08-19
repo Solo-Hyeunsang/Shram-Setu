@@ -13,7 +13,7 @@ import { supabase } from '../../api/supabaseClient';
 export function EmployerDashboard() {
   const { profile, user, signOut } = useAuth();
   const navigate = useNavigate();
-  const activeUserId = user?.id || profile?.id;
+  const activeUserId = profile?.id || user?.id;
 
   const [showPostModal, setShowPostModal] = useState(false);
   const [jobTitle, setJobTitle] = useState('');

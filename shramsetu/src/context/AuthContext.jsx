@@ -43,7 +43,8 @@ export function AuthProvider({ children }) {
   // Active user normalized
   const appUser = clerkUser
     ? {
-        id: clerkUser.id,
+        id: profile?.id || clerkUser.id, // Use Supabase UUID when profile is loaded
+        clerkId: clerkUser.id,
         email: clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses?.[0]?.emailAddress || null,
         phone: clerkUser.primaryPhoneNumber?.phoneNumber || clerkUser.phoneNumbers?.[0]?.phoneNumber || null,
         fullName: clerkUser.fullName || `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || null,
@@ -69,7 +70,33 @@ export function AuthProvider({ children }) {
     if (!userId) return;
     setProfileLoading(true);
     try {
-      const { data, error } = await getUserProfile(userId);
+      // First try by Clerk ID (in case profiles store it)
+      let { data, error } = await getUserProfile(userId);
+      
+      // If not found, try by phone number
+      if (error && clerkUser?.primaryPhoneNumber?.phoneNumber) {
+        const phone = clerkUser.primaryPhoneNumber.phoneNumber;
+        const result = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('phone', phone)
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      }
+      
+      // If still not found, try by email
+      if (error && clerkUser?.primaryEmailAddress?.emailAddress) {
+        const email = clerkUser.primaryEmailAddress.emailAddress;
+        const result = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', email)
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      }
+      
       if (!error && data) {
         if (data.is_suspended) {
           await clerk.signOut();
@@ -85,7 +112,7 @@ export function AuthProvider({ children }) {
     } finally {
       setProfileLoading(false);
     }
-  }, [clerk]);
+  }, [clerk, clerkUser]);
 
   const refreshProfile = useCallback(async () => {
     const activeId = clerkUser?.id || localUser?.id;

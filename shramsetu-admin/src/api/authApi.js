@@ -34,7 +34,7 @@ export async function getUserProfile(userId) {
     .select('*, institutions (*)')
     .eq('user_id', userId)
     .eq('is_active', true)
-    .single();
+    .maybeSingle();
 
   return {
     data: {

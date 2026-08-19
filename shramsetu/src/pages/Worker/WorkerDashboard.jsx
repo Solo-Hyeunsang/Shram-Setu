@@ -14,7 +14,7 @@ import { supabase } from '../../api/supabaseClient';
 export function WorkerDashboard() {
   const { profile, user, signOut } = useAuth();
   const navigate = useNavigate();
-  const activeUserId = user?.id || profile?.id;
+  const activeUserId = profile?.id || user?.id;
 
   const [verificationRequested, setVerificationRequested] = useState(false);
   const [availability, setAvailability] = useState('available');

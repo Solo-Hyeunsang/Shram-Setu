@@ -11,86 +11,7 @@ import { formatBudget, formatRelativeTime } from '../../utils/formatters';
 import { supabase } from '../../api/supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
 
-const SAMPLE_JOBS = [
-  {
-    id: '1',
-    title: 'Residential Wiring Installation',
-    trades: { slug: 'electrician', name_en: 'Electrician', icon: 'zap' },
-    trade_id: 'electrician',
-    description: 'Complete electrical wiring for a new 3-story residential building in Kathmandu. Must have experience with modern circuit designs, breaker box setups, and safety grounding.',
-    district: 'Kathmandu',
-    duration_days: 14,
-    budget_min: 25000,
-    budget_max: 40000,
-    status: 'open',
-    created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Bathroom Plumbing Repair & Fitting',
-    trades: { slug: 'plumber', name_en: 'Plumber', icon: 'droplets' },
-    trade_id: 'plumber',
-    description: 'Fix leaking pipes and install new sanitary fixtures in two bathrooms. Urgent repair needed for high-pressure CPVC connection.',
-    district: 'Lalitpur',
-    duration_days: 3,
-    budget_min: 5000,
-    budget_max: 12000,
-    status: 'open',
-    created_at: new Date(Date.now() - 5 * 3600000).toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Compound Wall Construction',
-    trades: { slug: 'mason', name_en: 'Mason', icon: 'brick-wall' },
-    trade_id: 'mason',
-    description: 'Build a 60-meter compound wall with brick and cement mortar. Foundation excavation and leveling work included.',
-    district: 'Bhaktapur',
-    duration_days: 21,
-    budget_min: 80000,
-    budget_max: 120000,
-    status: 'applications_received',
-    created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
-  },
-  {
-    id: '4',
-    title: 'Villa Interior Painting',
-    trades: { slug: 'painter', name_en: 'Painter', icon: 'paintbrush' },
-    trade_id: 'painter',
-    description: 'Interior wall putty and premium acrylic emulsion painting for 4 bedrooms and a living hall. Texture feature wall required in living room.',
-    district: 'Kathmandu',
-    duration_days: 7,
-    budget_min: 20000,
-    budget_max: 35000,
-    status: 'open',
-    created_at: new Date(Date.now() - 48 * 3600000).toISOString(),
-  },
-  {
-    id: '5',
-    title: 'Modular Kitchen Carpentry & Cabinets',
-    trades: { slug: 'carpenter', name_en: 'Carpenter', icon: 'hammer' },
-    trade_id: 'carpenter',
-    description: 'Build waterproof ply kitchen base and overhead cabinets with soft-close hinges, quartz countertop cutout, and laminate finish.',
-    district: 'Chitwan',
-    duration_days: 10,
-    budget_min: 35000,
-    budget_max: 55000,
-    status: 'open',
-    created_at: new Date(Date.now() - 12 * 3600000).toISOString(),
-  },
-  {
-    id: '6',
-    title: 'Security Grills & Main Gate Welding',
-    trades: { slug: 'welder', name_en: 'Welder', icon: 'flame' },
-    trade_id: 'welder',
-    description: 'Fabricate 8 window security grills and heavy iron entrance sliding gate with primer anti-rust coating.',
-    district: 'Kathmandu',
-    duration_days: 5,
-    budget_min: 18000,
-    budget_max: 30000,
-    status: 'open',
-    created_at: new Date(Date.now() - 8 * 3600000).toISOString(),
-  },
-];
+
 
 export function JobSearch() {
   const [searchParams] = useSearchParams();
@@ -142,14 +63,7 @@ export function JobSearch() {
   }, []);
 
   const allJobs = useMemo(() => {
-    const combined = [...dbJobs];
-    const existingIds = new Set(dbJobs.map((j) => j.id));
-    SAMPLE_JOBS.forEach((sj) => {
-      if (!existingIds.has(sj.id)) {
-        combined.push(sj);
-      }
-    });
-    return combined;
+    return dbJobs;
   }, [dbJobs]);
 
   const filteredJobs = useMemo(() => {
@@ -182,7 +96,7 @@ export function JobSearch() {
       if (user?.id) {
         await supabase.from('job_applications').insert({
           job_id: selectedJob.id,
-          worker_id: user.id,
+          worker_id: profile?.id || user?.id,
           message: applyMessage || 'Interested in this job',
           status: 'pending',
         });
@@ -606,6 +520,27 @@ export function JobSearch() {
                       border: '1.5px solid var(--color-border)',
                       outline: 'none',
                       fontFamily: 'var(--font-body)',
+                      fontSize: '13.5px',
+                    }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                    Expected Daily Wage (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={expectedWage}
+                    onChange={(e) => setExpectedWage(e.target.value)}
+                    placeholder="Enter expected wage"
+                    min="0"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1.5px solid var(--color-border)',
+                      outline: 'none',
                       fontSize: '13.5px',
                     }}
                   />

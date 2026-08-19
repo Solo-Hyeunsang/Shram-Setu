@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './routes/ProtectedRoute';
+import { RoleRoute } from './routes/RoleRoute';
 
 import { Landing } from './pages/Landing/Landing';
 import { Login } from './pages/Auth/Login';
@@ -31,7 +32,9 @@ export default function App() {
             path="/worker/dashboard"
             element={
               <ProtectedRoute>
-                <WorkerDashboard />
+                <RoleRoute allowedRoles={['worker']}>
+                  <WorkerDashboard />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
@@ -39,7 +42,9 @@ export default function App() {
             path="/employer/dashboard"
             element={
               <ProtectedRoute>
-                <EmployerDashboard />
+                <RoleRoute allowedRoles={['employer']}>
+                  <EmployerDashboard />
+                </RoleRoute>
               </ProtectedRoute>
             }
           />
