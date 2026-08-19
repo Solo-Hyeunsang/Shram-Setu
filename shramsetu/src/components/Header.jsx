@@ -1,29 +1,45 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Bell, User, LogOut } from 'lucide-react';
-import { Show, UserButton, useUser, useClerk } from '@clerk/react';
+import { useUser, useClerk } from '@clerk/react';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from './ui/Button';
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { session, profile, signOut } = useAuth();
-  const { user, isSignedIn } = useUser();
-  const { signOut: clerkSignOut } = useClerk();
+  const { session, profile, user: authUser, signOut } = useAuth();
+  const { user: clerkUser, isSignedIn } = useUser();
+  const clerk = useClerk();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isUserAuthenticated = isSignedIn || !!session;
+  const isUserAuthenticated = isSignedIn || !!session || !!authUser || !!profile;
 
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
+
+  const handleLogout = async () => {
+    try {
+      if (clerk && clerk.signOut) {
+        await clerk.signOut();
+      }
+    } catch (err) {
+      console.warn('Clerk sign out:', err);
+    }
+    if (signOut) {
+      await signOut();
+    }
+    navigate('/');
+  };
 
   const navLinks = [
     { label: 'Find Workers', href: '/search/workers' },
     { label: 'Find Work', href: '/search/jobs' },
     { label: 'How It Works', href: '/#how-it-works' },
   ];
+
+  const dashboardUrl = profile?.role === 'employer' ? '/employer/dashboard' : '/worker/dashboard';
 
   return (
     <>
@@ -34,7 +50,7 @@ export function Header() {
           left: 0,
           right: 0,
           zIndex: 1000,
-          background: 'rgba(255, 255, 255, 0.92)',
+          background: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           borderBottom: '1px solid var(--color-border)',
@@ -109,7 +125,7 @@ export function Header() {
                   transition: 'color var(--transition-fast)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--color-primary-500)';
+                  e.currentTarget.style.color = 'var(--color-primary-600)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = 'var(--color-text-secondary)';
@@ -121,140 +137,111 @@ export function Header() {
           </nav>
 
           {/* Desktop User Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} className="desktop-nav">
-            <Show when="signed-in">
-              <button
-                onClick={() => navigate('/notifications')}
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: 'var(--radius-full)',
-                  border: '1px solid var(--color-border)',
-                  background: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)',
-                }}
-                aria-label="Notifications"
-              >
-                <Bell size={18} color="var(--color-text-secondary)" />
-              </button>
-              <button
-                onClick={() => navigate('/worker/dashboard')}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 'var(--radius-full)',
-                  border: '1px solid var(--color-primary-200)',
-                  background: 'var(--color-primary-50)',
-                  color: 'var(--color-primary-700)',
-                  fontWeight: '600',
-                  fontSize: '13.5px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <User size={15} />
-                Dashboard
-              </button>
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    userButtonAvatarBox: { width: '38px', height: '38px' },
-                  },
-                }}
-              />
-            </Show>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} className="desktop-nav">
+            {isUserAuthenticated ? (
+              <>
+                <button
+                  onClick={() => navigate('/notifications')}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: 'var(--radius-full)',
+                    border: '1px solid var(--color-border)',
+                    background: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                  aria-label="Notifications"
+                >
+                  <Bell size={18} color="var(--color-text-secondary)" />
+                </button>
 
-            <Show when="signed-out">
-              {session ? (
-                <>
-                  <button
-                    onClick={() => navigate('/notifications')}
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: 'var(--radius-full)',
-                      border: '1px solid var(--color-border)',
-                      background: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all var(--transition-fast)',
-                    }}
-                    aria-label="Notifications"
-                  >
-                    <Bell size={18} color="var(--color-text-secondary)" />
-                  </button>
-                  <button
-                    onClick={() => navigate(profile?.role === 'worker' ? '/worker/dashboard' : '/employer/dashboard')}
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: 'var(--radius-full)',
-                      border: 'none',
-                      background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      color: '#FFFFFF',
-                      boxShadow: '0 2px 8px rgba(13, 43, 82, 0.25)',
-                    }}
-                    aria-label="Dashboard"
-                  >
-                    <User size={18} />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/login')}
-                    style={{ color: 'var(--color-text-secondary)', fontWeight: '600' }}
-                  >
-                    Log In
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => navigate('/login')}
-                  >
-                    Get Started
-                  </Button>
-                </>
-              )}
-            </Show>
+                <button
+                  onClick={() => navigate(dashboardUrl)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 'var(--radius-full)',
+                    border: '1px solid var(--color-primary-200)',
+                    background: 'var(--color-primary-50)',
+                    color: 'var(--color-primary-700)',
+                    fontWeight: '600',
+                    fontSize: '13.5px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  <User size={15} />
+                  Dashboard
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 'var(--radius-full)',
+                    border: '1px solid #FECACA',
+                    background: '#FEF2F2',
+                    color: '#DC2626',
+                    fontWeight: '600',
+                    fontSize: '13.5px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                  title="Sign Out"
+                >
+                  <LogOut size={15} />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/login')}
+                  style={{ color: 'var(--color-text-secondary)', fontWeight: '600' }}
+                >
+                  Sign In
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => navigate('/login')}
+                  style={{
+                    background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))',
+                    fontWeight: '600',
+                  }}
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Hamburger Button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="mobile-menu-btn"
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-border)',
-              background: '#FFFFFF',
               display: 'none',
-              alignItems: 'center',
-              justifyContent: 'center',
+              background: 'none',
+              border: 'none',
               cursor: 'pointer',
+              padding: '8px',
+              color: 'var(--color-text-primary)',
             }}
-            aria-label="Toggle menu"
+            className="mobile-menu-btn"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           >
-            {menuOpen ? (
-              <X size={20} color="var(--color-text-primary)" />
-            ) : (
-              <Menu size={20} color="var(--color-text-primary)" />
-            )}
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </header>
@@ -262,14 +249,14 @@ export function Header() {
       {/* Mobile Drawer Overlay */}
       {menuOpen && (
         <div
+          onClick={() => setMenuOpen(false)}
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 999,
-            background: 'rgba(15, 23, 42, 0.3)',
+            background: 'rgba(0, 0, 0, 0.4)',
+            zIndex: 1000,
             backdropFilter: 'blur(4px)',
           }}
-          onClick={() => setMenuOpen(false)}
         />
       )}
 
@@ -342,14 +329,14 @@ export function Header() {
         </nav>
 
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {session ? (
+          {isUserAuthenticated ? (
             <>
               <Button
                 variant="outline"
                 fullWidth
                 onClick={() => {
                   setMenuOpen(false);
-                  navigate(profile?.role === 'worker' ? '/worker/dashboard' : '/employer/dashboard');
+                  navigate(dashboardUrl);
                 }}
               >
                 <User size={16} />
@@ -359,12 +346,13 @@ export function Header() {
                 variant="ghost"
                 fullWidth
                 onClick={() => {
-                  signOut();
+                  handleLogout();
                   setMenuOpen(false);
                 }}
+                style={{ color: '#DC2626' }}
               >
                 <LogOut size={16} />
-                Sign Out
+                Logout
               </Button>
             </>
           ) : (
@@ -387,19 +375,12 @@ export function Header() {
                   navigate('/login');
                 }}
               >
-                Log In
+                Sign In
               </Button>
             </>
           )}
         </div>
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .mobile-menu-btn { display: flex !important; }
-        }
-      `}</style>
     </>
   );
 }

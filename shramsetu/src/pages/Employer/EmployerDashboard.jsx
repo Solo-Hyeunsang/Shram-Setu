@@ -1,15 +1,18 @@
 // Shram Setu — Employer Dashboard
 import { useState } from 'react';
-import { Plus, Users, Briefcase, CheckCircle2, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Users, Briefcase, CheckCircle2, Clock, LogOut } from 'lucide-react';
 import { Header } from '../../components/Header';
 import { Footer } from '../../components/Footer';
 import { Button } from '../../components/ui/Button';
 import { JobCard } from '../../components/ui/JobCard';
 import { TRADES, DISTRICTS } from '../../utils/constants';
 import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../api/supabaseClient';
 
 export function EmployerDashboard() {
-  const { profile } = useAuth();
+  const { profile, user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [showPostModal, setShowPostModal] = useState(false);
   const [jobTitle, setJobTitle] = useState('');
   const [tradeId, setTradeId] = useState('electrician');
@@ -33,11 +36,20 @@ export function EmployerDashboard() {
     },
   ]);
 
-  const handlePostJob = (e) => {
+  const handleLogout = async () => {
+    if (signOut) {
+      await signOut();
+    }
+    navigate('/');
+  };
+
+  const handlePostJob = async (e) => {
     e.preventDefault();
     const newJob = {
       id: `job-${Date.now()}`,
+      employer_id: user?.id || profile?.id || 'demo-emp',
       title: jobTitle,
+      trade_id: tradeId,
       trades: { slug: tradeId, name_en: TRADES.find((t) => t.slug === tradeId)?.nameEn, icon: 'wrench' },
       description,
       district,
@@ -47,6 +59,24 @@ export function EmployerDashboard() {
       status: 'open',
       created_at: new Date().toISOString(),
     };
+
+    try {
+      await supabase.from('jobs').insert({
+        id: newJob.id,
+        employer_id: newJob.employer_id,
+        title: newJob.title,
+        trade_id: newJob.trade_id,
+        description: newJob.description,
+        district: newJob.district,
+        duration_days: newJob.duration_days,
+        budget_min: newJob.budget_min,
+        budget_max: newJob.budget_max,
+        status: 'open',
+      });
+    } catch (err) {
+      console.warn('Job insert in Supabase:', err);
+    }
+
     setPostedJobs([newJob, ...postedJobs]);
     setShowPostModal(false);
     setJobTitle('');
@@ -84,10 +114,25 @@ export function EmployerDashboard() {
               </p>
             </div>
 
-            <Button variant="primary" onClick={() => setShowPostModal(true)}>
-              <Plus size={16} />
-              Post a New Job
-            </Button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <Button variant="primary" onClick={() => setShowPostModal(true)}>
+                <Plus size={16} />
+                Post a New Job
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                style={{
+                  borderColor: '#FECACA',
+                  background: '#FEF2F2',
+                  color: '#DC2626',
+                  fontWeight: '600',
+                }}
+              >
+                <LogOut size={16} />
+                Logout
+              </Button>
+            </div>
           </div>
 
           {/* Stats grid */}

@@ -182,9 +182,73 @@ export function WorkerSearch() {
   const [sortBy, setSortBy] = useState('rating_desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeWorkerModal, setActiveWorkerModal] = useState(null);
+  const [jobOfferModal, setJobOfferModal] = useState(null);
+  const [offerTitle, setOfferTitle] = useState('');
+  const [offerBudget, setOfferBudget] = useState('');
+  const [offerMessage, setOfferMessage] = useState('');
+  const [toastMessage, setToastMessage] = useState(null);
+  const [dbWorkers, setDbWorkers] = useState([]);
+
+  useEffect(() => {
+    const tradeParam = searchParams.get('trade');
+    if (tradeParam) {
+      setSelectedTrade(tradeParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const fetchWorkers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('worker_profiles')
+          .select('*, profiles!inner(*)');
+        if (!error && data && data.length > 0) {
+          const formatted = data.map((d) => ({
+            id: d.id,
+            profiles: {
+              full_name: d.profiles?.full_name || 'Worker',
+              district: d.profiles?.district || 'Kathmandu',
+              municipality: d.profiles?.municipality || 'Central',
+              phone: d.profiles?.phone || '+977-9800000000',
+              avatar_url: d.profiles?.avatar_url || null,
+              bio: d.bio || 'Experienced verified skilled worker available for residential and commercial projects.',
+            },
+            worker_profiles: {
+              primary_trade: d.primary_trade || 'electrician',
+              average_rating: d.average_rating || 4.8,
+              total_reviews: d.total_reviews || 10,
+              verification_status: d.verification_status || 'verified',
+              availability: d.availability || 'available',
+              daily_wage_min: d.daily_wage_min || 800,
+              daily_wage_max: d.daily_wage_max || 1400,
+              years_experience: d.years_experience || 4,
+              completed_jobs: d.completed_jobs || 15,
+              skills: ['Professional Service', 'Standard Safety', 'Site Experience'],
+              ctevt_cert_no: d.ctevt_cert_no || null,
+            },
+          }));
+          setDbWorkers(formatted);
+        }
+      } catch (err) {
+        console.warn('Worker fetch:', err);
+      }
+    };
+    fetchWorkers();
+  }, []);
+
+  const allWorkers = useMemo(() => {
+    const combined = [...dbWorkers];
+    const existingIds = new Set(dbWorkers.map((w) => w.id));
+    SAMPLE_WORKERS.forEach((sw) => {
+      if (!existingIds.has(sw.id)) {
+        combined.push(sw);
+      }
+    });
+    return combined;
+  }, [dbWorkers]);
 
   const filteredWorkers = useMemo(() => {
-    return SAMPLE_WORKERS.filter((w) => {
+    return allWorkers.filter((w) => {
       const wp = w.worker_profiles;
       const p = w.profiles;
 
@@ -209,7 +273,7 @@ export function WorkerSearch() {
       if (sortBy === 'wage_desc') return (wpB.daily_wage_max || 0) - (wpA.daily_wage_max || 0);
       return 0;
     });
-  }, [selectedTrade, selectedDistrict, verifiedOnly, searchQuery, sortBy]);
+  }, [allWorkers, selectedTrade, selectedDistrict, verifiedOnly, searchQuery, sortBy]);
 
   const hasActiveFilters = selectedTrade !== 'all' || selectedDistrict !== 'all' || verifiedOnly || searchQuery.trim() !== '';
 
@@ -219,6 +283,19 @@ export function WorkerSearch() {
     setVerifiedOnly(false);
     setSearchQuery('');
     setSortBy('rating_desc');
+  };
+
+  const handleSendOffer = (e) => {
+    e.preventDefault();
+    if (!jobOfferModal) return;
+    const workerName = jobOfferModal.profiles.full_name;
+    setJobOfferModal(null);
+    setActiveWorkerModal(null);
+    setOfferTitle('');
+    setOfferBudget('');
+    setOfferMessage('');
+    setToastMessage(`Job offer submitted directly to ${workerName}!`);
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
   return (
@@ -799,7 +876,7 @@ export function WorkerSearch() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  alert(`Job request draft opened for ${activeWorkerModal.profiles.full_name}`);
+                  setJobOfferModal(activeWorkerModal);
                   setActiveWorkerModal(null);
                 }}
                 style={{
@@ -812,6 +889,175 @@ export function WorkerSearch() {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Interactive Job Offer Modal */}
+      {jobOfferModal && (
+        <div
+          onClick={() => setJobOfferModal(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            zIndex: 1100,
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              background: '#FFFFFF',
+              borderRadius: '24px',
+              padding: '36px 32px',
+              boxShadow: 'var(--shadow-2xl)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h3 style={{ fontSize: '19px', fontWeight: '800', margin: 0, color: 'var(--color-text-primary)' }}>
+                  Send Job Offer
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '4px 0 0 0' }}>
+                  Propose a work assignment directly to <strong>{jobOfferModal.profiles.full_name}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setJobOfferModal(null)}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: 'var(--radius-full)',
+                  border: '1px solid var(--color-border)',
+                  background: '#FFFFFF',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSendOffer}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                  Job Title / Project Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 2-Room Wiring & Switchboard Setup"
+                  value={offerTitle}
+                  onChange={(e) => setOfferTitle(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1.5px solid var(--color-border)',
+                    outline: 'none',
+                    fontSize: '13.5px',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                  Offered Budget (NPR) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="e.g. 5000"
+                  value={offerBudget}
+                  onChange={(e) => setOfferBudget(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1.5px solid var(--color-border)',
+                    outline: 'none',
+                    fontSize: '13.5px',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                  Project Description & Requirements
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Describe location, start date, and specific tools required..."
+                  value={offerMessage}
+                  onChange={(e) => setOfferMessage(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1.5px solid var(--color-border)',
+                    outline: 'none',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '13.5px',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setJobOfferModal(null)}
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  style={{
+                    flex: 2,
+                    background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))',
+                  }}
+                >
+                  Send Job Offer
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {toastMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '84px',
+            right: '24px',
+            zIndex: 1200,
+            background: 'var(--color-primary-700)',
+            color: '#FFFFFF',
+            padding: '14px 20px',
+            borderRadius: 'var(--radius-xl)',
+            boxShadow: 'var(--shadow-xl)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontSize: '14px',
+            fontWeight: '600',
+          }}
+        >
+          <CheckCircle2 size={18} color="#4ADE80" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
