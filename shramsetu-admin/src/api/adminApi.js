@@ -2,26 +2,21 @@
 import { supabase } from './supabaseClient';
 
 export async function getPlatformStats() {
-  try {
-    const results = await Promise.all([
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'worker'),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'employer'),
-      supabase.from('jobs').select('*', { count: 'exact', head: true }),
-      supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
-      supabase.from('worker_profiles').select('*', { count: 'exact', head: true }).eq('verification_status', 'verified'),
-    ]);
+  const [{ count: workers }, { count: employers }, { count: jobs }, { count: completedJobs }, { count: verifiedWorkers }] = await Promise.all([
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'worker'),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'employer'),
+    supabase.from('jobs').select('*', { count: 'exact', head: true }),
+    supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+    supabase.from('worker_profiles').select('*', { count: 'exact', head: true }).eq('verification_status', 'verified'),
+  ]);
 
-    return {
-      workers: results[0].count ?? 0,
-      employers: results[1].count ?? 0,
-      jobs: results[2].count ?? 0,
-      completedJobs: results[3].count ?? 0,
-      verifiedWorkers: results[4].count ?? 0,
-    };
-  } catch (err) {
-    console.error('Failed to fetch platform stats:', err);
-    return { workers: 0, employers: 0, jobs: 0, completedJobs: 0, verifiedWorkers: 0 };
-  }
+  return {
+    workers: workers ?? 0,
+    employers: employers ?? 0,
+    jobs: jobs ?? 0,
+    completedJobs: completedJobs ?? 0,
+    verifiedWorkers: verifiedWorkers ?? 0,
+  };
 }
 
 export async function listUsers(role = 'all', searchQuery = '') {

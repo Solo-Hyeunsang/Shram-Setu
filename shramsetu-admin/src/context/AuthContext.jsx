@@ -48,11 +48,9 @@ export function AuthProvider({ children }) {
         setSession(s);
         setUser(s?.user ?? null);
         if (s?.user) {
-          setLoading(true);
-          loadProfile(s.user.id).finally(() => setLoading(false));
+          loadProfile(s.user.id);
         } else {
           setProfile(null);
-          setLoading(false);
         }
       }
     );

@@ -27,7 +27,151 @@ const TRADE_CHIPS = [
   { slug: 'welder', label: 'Welder', icon: Flame },
 ];
 
-
+const SAMPLE_WORKERS = [
+  {
+    id: '1',
+    profiles: {
+      full_name: 'Ram Kumar Tamang',
+      district: 'Kathmandu',
+      municipality: 'Kathmandu Metropolitan - 4',
+      phone: '+977-9841234567',
+      avatar_url: null,
+      bio: 'Certified master electrician with 6+ years of commercial and residential expertise. Specializes in 3-phase heavy wiring, inverter backup installations, circuit breaker diagnostics, and emergency outage repair.',
+    },
+    worker_profiles: {
+      primary_trade: 'electrician',
+      average_rating: 4.8,
+      total_reviews: 24,
+      verification_status: 'verified',
+      availability: 'available',
+      daily_wage_min: 800,
+      daily_wage_max: 1200,
+      years_experience: 6,
+      completed_jobs: 54,
+      skills: ['House Wiring', '3-Phase Power', 'Inverter & Solar', 'Circuit Diagnostics', 'Safety Breakers'],
+      ctevt_cert_no: 'CTEVT-EL-2022-8941',
+    },
+  },
+  {
+    id: '2',
+    profiles: {
+      full_name: 'Sita Rai',
+      district: 'Lalitpur',
+      municipality: 'Patan - 12',
+      phone: '+977-9812345678',
+      avatar_url: null,
+      bio: 'Professional plumbing technician with 4 years in sanitary fixture installation, high-pressure CPVC pipelines, drainage troubleshooting, and solar water heater installation.',
+    },
+    worker_profiles: {
+      primary_trade: 'plumber',
+      average_rating: 4.6,
+      total_reviews: 18,
+      verification_status: 'verified',
+      availability: 'available',
+      daily_wage_min: 900,
+      daily_wage_max: 1400,
+      years_experience: 4,
+      completed_jobs: 38,
+      skills: ['Pipe Fitting', 'Sanitary Fixtures', 'Solar Heaters', 'Underground Drainage', 'Leak Detection'],
+      ctevt_cert_no: 'CTEVT-PL-2023-4412',
+    },
+  },
+  {
+    id: '3',
+    profiles: {
+      full_name: 'Bikash Shrestha',
+      district: 'Bhaktapur',
+      municipality: 'Suryabinayak - 5',
+      phone: '+977-9801234569',
+      avatar_url: null,
+      bio: 'Expert mason with 8+ years across Kathmandu valley. Proficient in RCC concrete casting, brick masonry, structural compound walls, traditional stone carving, and floor tiling.',
+    },
+    worker_profiles: {
+      primary_trade: 'mason',
+      average_rating: 4.9,
+      total_reviews: 31,
+      verification_status: 'verified',
+      availability: 'busy',
+      daily_wage_min: 1000,
+      daily_wage_max: 1500,
+      years_experience: 8,
+      completed_jobs: 72,
+      skills: ['Brick Masonry', 'Concrete RCC', 'Tile & Marble', 'Compound Walls', 'Stone Plaster'],
+      ctevt_cert_no: 'CTEVT-MS-2021-1209',
+    },
+  },
+  {
+    id: '4',
+    profiles: {
+      full_name: 'Anita Gurung',
+      district: 'Pokhara',
+      municipality: 'Pokhara Lekhnath - 8',
+      phone: '+977-9861234570',
+      avatar_url: null,
+      bio: 'Premium architectural painter. Specializes in luxury interior wall putty, decorative stencil textures, weather-guard exterior coating, and anti-fungal bathroom ceiling solutions.',
+    },
+    worker_profiles: {
+      primary_trade: 'painter',
+      average_rating: 4.7,
+      total_reviews: 15,
+      verification_status: 'verified',
+      availability: 'available',
+      daily_wage_min: 700,
+      daily_wage_max: 1100,
+      years_experience: 5,
+      completed_jobs: 29,
+      skills: ['Wall Putty', 'Texture Design', 'Waterproofing', 'Exterior Coating', 'Enamel Wood Polish'],
+      ctevt_cert_no: 'CTEVT-PT-2022-7721',
+    },
+  },
+  {
+    id: '5',
+    profiles: {
+      full_name: 'Dipendra Chaudhary',
+      district: 'Chitwan',
+      municipality: 'Bharatpur - 10',
+      phone: '+977-9849876543',
+      avatar_url: null,
+      bio: 'Custom woodworker with 3 years of residential carpentry. Builds modular kitchen cabinets, wooden door/window frames, partition walls, and durable office desks.',
+    },
+    worker_profiles: {
+      primary_trade: 'carpenter',
+      average_rating: 4.5,
+      total_reviews: 12,
+      verification_status: 'unverified',
+      availability: 'available',
+      daily_wage_min: 850,
+      daily_wage_max: 1300,
+      years_experience: 3,
+      completed_jobs: 21,
+      skills: ['Modular Kitchen', 'Furniture Framing', 'Laminate Work', 'Door Hinges', 'Wood Polishing'],
+    },
+  },
+  {
+    id: '6',
+    profiles: {
+      full_name: 'Sunil Thapa',
+      district: 'Kathmandu',
+      municipality: 'Tokha - 2',
+      phone: '+977-9851122334',
+      avatar_url: null,
+      bio: 'Certified metal fabricator with 7 years of industrial experience. Specializes in heavy roof trusses, metal staircase railings, security grill gates, and ARC/TIG precision welding.',
+    },
+    worker_profiles: {
+      primary_trade: 'welder',
+      average_rating: 4.9,
+      total_reviews: 20,
+      verification_status: 'verified',
+      availability: 'available',
+      daily_wage_min: 1100,
+      daily_wage_max: 1600,
+      years_experience: 7,
+      completed_jobs: 63,
+      skills: ['ARC & TIG Welding', 'Roof Truss', 'Safety Grills', 'Staircase Railing', 'Steel Gates'],
+      ctevt_cert_no: 'CTEVT-WD-2020-5611',
+    },
+  },
+];
 
 export function WorkerSearch() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -58,7 +202,7 @@ export function WorkerSearch() {
       try {
         const { data, error } = await supabase
           .from('worker_profiles')
-          .select('*, profiles!inner(*), worker_trades(trade:trade_id(id, name))');
+          .select('*, profiles!inner(*)');
         if (!error && data && data.length > 0) {
           const formatted = data.map((d) => ({
             id: d.id,
@@ -80,7 +224,7 @@ export function WorkerSearch() {
               daily_wage_max: d.daily_wage_max || 1400,
               years_experience: d.years_experience || 4,
               completed_jobs: d.completed_jobs || 15,
-              skills: d.worker_trades?.map(wt => wt.trade?.name).filter(Boolean) || [],
+              skills: ['Professional Service', 'Standard Safety', 'Site Experience'],
               ctevt_cert_no: d.ctevt_cert_no || null,
             },
           }));
@@ -94,7 +238,14 @@ export function WorkerSearch() {
   }, []);
 
   const allWorkers = useMemo(() => {
-    return dbWorkers;
+    const combined = [...dbWorkers];
+    const existingIds = new Set(dbWorkers.map((w) => w.id));
+    SAMPLE_WORKERS.forEach((sw) => {
+      if (!existingIds.has(sw.id)) {
+        combined.push(sw);
+      }
+    });
+    return combined;
   }, [dbWorkers]);
 
   const filteredWorkers = useMemo(() => {
